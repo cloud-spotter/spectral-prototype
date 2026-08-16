@@ -126,9 +126,11 @@ input[type=text]:focus-visible, textarea:focus-visible{
 
 .clue{
   font-family:"Baloo 2",inherit;font-weight:700;
-  font-size:clamp(1.15rem,5.4vw,1.5rem);color:var(--ink);
+  font-size:clamp(1.15rem,5.4vw,1.5rem);color:var(--ink);line-height:1.3;
   padding:10px 12px;border-bottom:3px solid var(--label);display:inline-block;
+  max-width:100%;overflow-wrap:break-word;
 }
+.clue.long{font-size:clamp(1rem,4.2vw,1.2rem)}
 
 /* scores */
 .scoreline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -155,7 +157,7 @@ input[type=text]:focus-visible, textarea:focus-visible{
 #view-guess .panel{
   width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;
   min-height:68px;padding:16px 26px;
-  display:flex;flex-direction:column;justify-content:center;text-align:center;
+  display:grid;place-items:center;text-align:center;
 }
 #view-guess .actions{margin-top:26px}
 #view-guess .actions button{padding:10px 20px}
@@ -239,7 +241,7 @@ button.threequarter{width:60%;border-radius:999px}
     </div>
     <div class="panel">
       <label class="field" for="writeInput">Something that belongs here</label>
-      <input type="text" id="writeInput" maxlength="42" placeholder="A thing, a place, a person…" autocomplete="off">
+      <input type="text" id="writeInput" maxlength="90" placeholder="A thing, a place, a person…" autocomplete="off">
     </div>
     <div class="actions"><button id="writeNext">Lock it in</button></div>
   </section>
@@ -262,7 +264,7 @@ button.threequarter{width:60%;border-radius:999px}
     </div>
     <div class="panel rose stack">
       <p id="guessResult" class="hidden"></p>
-      <p class="muted">Drag the slider button, or tap the bar.</p>
+      <p class="muted" id="guessHint">Drag the slider button, or tap the bar.</p>
     </div>
     <div class="actions"><button id="guessLock">Submit</button></div>
   </section>
@@ -413,7 +415,7 @@ function paintWrite(){
 function submitWrite(){
   const val = $("writeInput").value.trim();
   if(!val) { $("writeInput").focus(); return; }
-  game.p[S.me].e[S.idx].l = val.slice(0,42);
+  game.p[S.me].e[S.idx].l = val.slice(0,90);
   S.idx++;
   if(S.idx < game.p[S.me].e.length){ paintWrite(); }
   else { afterWriting(); }
@@ -477,12 +479,14 @@ function paintGuess(){
   $("guessGhost").classList.remove("on");
   $("guessTruth").classList.remove("on");
   $("guessResult").classList.add("hidden");
+  $("guessHint").classList.remove("hidden");
   $("guessLock").textContent = "Submit";
   $("guessLock").disabled = false;
   $("guessTop").textContent = pair[0];
   $("guessBottom").textContent = pair[1];
   $("guessClue").textContent = entry.l;
-  $("guessIntro").textContent = `${game.p[otherIndex()].n} put this somewhere on the pole. Where?`;
+  $("guessClue").classList.toggle("long", entry.l.length > 40);
+  $("guessIntro").textContent = `${game.p[otherIndex()].n} put this somewhere on the bar. Where?`;
   setTag(`${S.idx+1}/${theirs.length}`);
   setPos(50);
   ball.focus();
@@ -510,7 +514,8 @@ function lockGuess(){
     truth.classList.add("on");
     $("guessResult").innerHTML = `<span class="pts">${pts}</span> <span class="muted">points</span>`;
     $("guessResult").classList.remove("hidden");
-    $("guessLock").textContent = S.idx + 1 < theirs.length ? "Next spectrum" : "Done guessing";
+    $("guessHint").classList.add("hidden");
+    $("guessLock").textContent = S.idx + 1 < theirs.length ? "Next" : "Done guessing";
     return;
   }
 
