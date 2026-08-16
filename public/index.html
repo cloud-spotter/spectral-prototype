@@ -101,9 +101,14 @@ input[type=text]:focus-visible, textarea:focus-visible{
   position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:14px;
   background:var(--pole);border:2px solid var(--outline);border-radius:8px;
 }
-.zones{position:absolute;left:50%;transform:translateX(-50%);width:52px;top:0;bottom:0;pointer-events:none;opacity:0;transition:opacity .45s ease}
-.zones.on{opacity:1}
-.zone{position:absolute;left:0;right:0;border-radius:6px;background:var(--accent)}
+/* On reveal: a see-through copy of the slider button at the true position,
+   with the dashed line running through its centre. */
+.ghost{
+  position:absolute;left:50%;width:44px;height:44px;margin-left:-22px;margin-top:-22px;
+  border-radius:50%;background:var(--ball);border:2px solid var(--outline);
+  opacity:0;transition:opacity .5s ease .2s;pointer-events:none;
+}
+.ghost.on{opacity:.5}
 .ball{
   position:absolute;left:50%;width:44px;height:44px;margin-left:-22px;margin-top:-22px;
   border-radius:50%;background:var(--ball);border:2px solid var(--outline);
@@ -113,11 +118,11 @@ input[type=text]:focus-visible, textarea:focus-visible{
 .ball.locked{cursor:default}
 .truth{
   position:absolute;left:50%;width:64px;height:0;margin-left:-32px;
-  border-top:4px dashed var(--label);opacity:0;transition:opacity .5s ease .2s;
+  border-top:3px dashed var(--label);opacity:0;transition:opacity .5s ease .2s;pointer-events:none;
 }
 .truth.on{opacity:1}
 .truth span{position:absolute;left:70px;top:-12px;white-space:nowrap;color:var(--label);font-weight:700;font-size:.8rem;letter-spacing:.08em}
-@media (prefers-reduced-motion:reduce){.zones,.truth{transition:none}}
+@media (prefers-reduced-motion:reduce){.ghost,.truth{transition:none}}
 
 .clue{
   font-family:"Baloo 2",inherit;font-weight:700;
@@ -145,6 +150,15 @@ input[type=text]:focus-visible, textarea:focus-visible{
   box-shadow:0 0 0 5px rgba(168,62,62,.22);
 }
 .panel.rose button{background:var(--rose-btn);color:#FFFFFF;border-color:var(--rose-btn-edge)}
+/* Sized to its text rather than the full column, centred, and holding a
+   little height so the lone hint line sits centred rather than sagging. */
+#view-guess .panel{
+  width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;
+  min-height:68px;padding:16px 26px;
+  display:flex;flex-direction:column;justify-content:center;text-align:center;
+}
+#view-guess .actions{margin-top:26px}
+#view-guess .actions button{padding:10px 20px}
 .centre{display:flex;justify-content:center;text-align:center}
 button.threequarter{width:60%;border-radius:999px}
 .hidden{display:none !important}
@@ -237,7 +251,7 @@ button.threequarter{width:60%;border-radius:999px}
       <div class="end-word" id="guessTop"></div>
       <div class="pole-area">
         <div class="pole"></div>
-        <div class="zones" id="guessZones"></div>
+        <div class="ghost" id="guessGhost"></div>
         <div class="truth" id="guessTruth"><span>actual</span></div>
         <div class="ball" id="guessBall" role="slider" tabindex="0"
              aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"
@@ -246,11 +260,11 @@ button.threequarter{width:60%;border-radius:999px}
       <div class="end-word" id="guessBottom"></div>
       <div style="margin-top:10px"><span class="clue" id="guessClue"></span></div>
     </div>
-    <div class="panel stack">
+    <div class="panel rose stack">
       <p id="guessResult" class="hidden"></p>
-      <p class="muted">Drag the slider button, tap the bar, or use the arrow keys.</p>
+      <p class="muted">Drag the slider button, or tap the bar.</p>
     </div>
-    <div class="actions"><button id="guessLock">Lock in my guess</button></div>
+    <div class="actions"><button id="guessLock">Submit</button></div>
   </section>
 
   <!-- ============ SHARE ============ -->
@@ -425,7 +439,8 @@ function posFromEvent(clientY){
 }
 function dragStart(e){
   if(S.locked) return;
-  e.preventDefault();
+  e.preventDefault();          // stops the page scrolling mid-drag...
+  ball.focus();                // ...but that also blocks focus, so set it by hand
   posFromEvent(e.clientY);
   const move = ev => posFromEvent(ev.clientY);
   const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
@@ -459,10 +474,10 @@ function paintGuess(){
   const pair = PAIRS[entry.s];
   S.locked = false;
   ball.classList.remove("locked");
-  $("guessZones").classList.remove("on");
+  $("guessGhost").classList.remove("on");
   $("guessTruth").classList.remove("on");
   $("guessResult").classList.add("hidden");
-  $("guessLock").textContent = "Lock in my guess";
+  $("guessLock").textContent = "Submit";
   $("guessLock").disabled = false;
   $("guessTop").textContent = pair[0];
   $("guessBottom").textContent = pair[1];
@@ -472,21 +487,12 @@ function paintGuess(){
   setPos(50);
   ball.focus();
 }
-function drawZones(target){
-  const z = $("guessZones");
-  z.innerHTML = "";
-  /* Widest band first so the tighter ones sit on top and read darker. */
-  [...BANDS].reverse().forEach(([max,pts]) => {
-    const d = document.createElement("div");
-    d.className = "zone";
-    const top = Math.max(0, target - max), bottom = Math.min(100, target + max);
-    d.style.top = top + "%";
-    d.style.height = (bottom - top) + "%";
-    d.style.opacity = (0.12 + pts*0.11).toFixed(2);
-    z.appendChild(d);
-  });
-  z.classList.add("on");
+function showGhost(target){
+  const g = $("guessGhost");
+  g.style.top = target + "%";
+  g.classList.add("on");
 }
+
 function lockGuess(){
   const theirs = game.p[otherIndex()].e;
   const entry = theirs[S.idx];
@@ -498,12 +504,11 @@ function lockGuess(){
     S.guesses.push(guess);
     const d = Math.abs(guess - entry.t);
     const pts = scoreFor(d);
-    drawZones(entry.t);
+    showGhost(entry.t);
     const truth = $("guessTruth");
     truth.style.top = entry.t + "%";
     truth.classList.add("on");
-    const msg = pts === 1000 ? "Bullseye." : pts === 0 ? "Nowhere near." : "";
-    $("guessResult").innerHTML = `<span class="pts">${pts}</span> &nbsp;<span class="muted">${d} away. ${msg}</span>`;
+    $("guessResult").innerHTML = `<span class="pts">${pts}</span> <span class="muted">points</span>`;
     $("guessResult").classList.remove("hidden");
     $("guessLock").textContent = S.idx + 1 < theirs.length ? "Next spectrum" : "Done guessing";
     return;
