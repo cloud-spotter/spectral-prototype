@@ -1,7 +1,7 @@
 # Spectral
 
-A two-player word game. One player names something that sits at a hidden point
-on a sliding scale between two words; the other guesses where it was. Closest
+A two-player word/phrase game. One player names something that sits at a hidden point
+on a sliding scale between two words/phrases; the other guesses where it was. Closest
 guess scores most.
 
 Spectral is an imitation of Spectrum, a game I played online during lockdown at
