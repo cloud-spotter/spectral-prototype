@@ -14,7 +14,7 @@ name is the softer spot: there is an unrelated 2024 deduction board game also
 called Spectral. Different genre, so confusion is unlikely, but worth knowing if
 this ever goes beyond a link shared between two people.
 
-Claude built this prototype, responding to my descriptions and requests for edits to the visual design, colour scheme and gameplay. It has much potential for expansion, including to increase the available 'spectral pairs' to avoid repetition and overfamiliarity. 
+Claude built this prototype, responding to my descriptions and requests for edits to the visual design, colour scheme and gameplay. It has much potential for expansion, including to increase the available 'spectral pairs' to avoid repetition and overfamiliarity. The game I remember, which this is based on, was multiplayer, so that's another area for development.
 
 ## How a game runs
 
