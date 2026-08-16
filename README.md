@@ -7,12 +7,7 @@ guess scores most.
 Spectral is an imitation of Spectrum, a game I played online during lockdown at
 playfromhome.us, which no longer seems to be running. Rebuilt from memory, so the
 details are probably wrong. Both it and this likely owe a debt to Wavelength by
-Alex Hague, Justin Vickers and Wolfgang Warsch (CMYK, 2019).
-
-Game mechanics aren't copyrightable, so rebuilding a remembered game is fine. The
-name is the softer spot: there is an unrelated 2024 deduction board game also
-called Spectral. Different genre, so confusion is unlikely, but worth knowing if
-this ever goes beyond a link shared between two people.
+Alex Hague, Justin Vickers and Wolfgang Warsch (CMYK, 2019). There is also an unrelated 2024 deduction board game also called Spectral. Different genre, so confusion is unlikely.
 
 Claude built this prototype, responding to my descriptions and requests for edits to the visual design, colour scheme and gameplay. It has much potential for expansion, including to increase the available 'spectral pairs' to avoid repetition and overfamiliarity. The game I remember, which this is based on, was multiplayer, so that's another area for development.
 
