@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spectral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------
+   THEMES - three palettes, all AA-contrast for body text.
+   --------------------------------------------------------------- */
+/* ---------------------------------------------------------------
+   PALETTE - one scheme, deep rockpool. Every value below has been
+   checked: text clears 4.5:1, shapes and outlines clear 3:1.
+   --------------------------------------------------------------- */
+:root{
+  --bg:#74BECD; --ink:#0F2C33; --muted:#21454D;
+  --panel:#E8F4F7; --line:#3C7B8A; --field:#FFFFFF;
+  --rose:#FFDEDE; --rose-line:#D65454; --rose-focus:#A83E3E;
+  --rose-btn:#B04E4E; --rose-btn-edge:#8E3838;
+  --pole:#ABE7F0; --ball:#F8D65B; --outline:#123038;
+  --label:#7A1A12; --accent:#0F5A66; --accent-ink:#FFFFFF;
+  --btn:#FCEDA3; --btn-ink:#173F49; --btn-edge:#6E5410;
+  --title:#FCEDA3; --title-edge:#3C7B8A;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Nunito",ui-rounded,"Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:17px; line-height:1.5;
+  min-height:100vh;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2,h3,.display{font-family:"Baloo 2",ui-rounded,"Segoe UI",system-ui,sans-serif;font-weight:700;line-height:1.15;margin:0}
+h1{font-size:clamp(2.2rem,9vw,3.4rem);letter-spacing:.06em}
+h2{font-size:clamp(1.3rem,5vw,1.7rem)}
+.wrap{max-width:560px;margin:0 auto;padding:22px 18px 64px}
+.stack>*+*{margin-top:16px}
+p{margin:0}
+.muted{color:var(--muted);font-size:.92rem}
+
+/* header */
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.tagline{color:var(--muted);font-size:.85rem;letter-spacing:.14em;text-transform:uppercase}
+
+/* panels + controls */
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px}
+label.field{display:block;font-weight:700;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+input[type=text]{
+  width:100%;font:inherit;font-size:1.05rem;padding:12px 14px;
+  border:2px solid var(--line);border-radius:12px;
+  background:var(--field);color:var(--ink);
+}
+input[type=text]::placeholder{color:#4F7A85;opacity:1}
+button{
+  font-family:"Baloo 2",inherit;font-size:1.05rem;font-weight:700;
+  padding:11px 22px;border-radius:999px;border:2px solid var(--btn-edge);
+  background:var(--btn);color:var(--btn-ink);cursor:pointer;
+}
+.actions{display:flex;justify-content:flex-end}
+.row{display:flex;gap:10px;align-items:center}
+.row input[type=text]{flex:1;min-width:0}
+.row button{white-space:nowrap;flex:none}
+h1{
+  color:var(--title);
+  /* Thin outline in the same teal as the panel borders, drawn as eight offsets
+     so it stays even on the curves and doesn't thin the letterforms the way
+     -webkit-text-stroke would. */
+  text-shadow:
+    -1px -1px 0 var(--title-edge),  0   -1px 0 var(--title-edge),
+     1px -1px 0 var(--title-edge),  1px  0   0 var(--title-edge),
+     1px  1px 0 var(--title-edge),  0    1px 0 var(--title-edge),
+    -1px  1px 0 var(--title-edge), -1px  0   0 var(--title-edge);
+}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button.wide{width:100%;border-radius:18px}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+input[type=text]:focus-visible, textarea:focus-visible{
+  outline:none;border-color:var(--ink);
+  box-shadow:0 0 0 5px rgba(18,48,56,.16);
+}
+
+/* ---------------------------------------------------------------
+   THE BOARD - the signature element.
+   A vertical bar, a slider button, a word at each end.
+   --------------------------------------------------------------- */
+/* No card here on purpose - the pole should float on the background. */
+.board{ padding:8px 0 4px; text-align:center; position:relative; }
+.end-word{
+  color:var(--label);font-family:"Baloo 2",inherit;font-weight:700;
+  font-size:clamp(1rem,4.4vw,1.25rem);letter-spacing:.08em;text-transform:uppercase;
+  min-height:1.2em;
+}
+.pole-area{position:relative;height:330px;margin:14px auto;width:100%;max-width:280px}
+.pole{
+  position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:14px;
+  background:var(--pole);border:2px solid var(--outline);border-radius:8px;
+}
+.zones{position:absolute;left:50%;transform:translateX(-50%);width:52px;top:0;bottom:0;pointer-events:none;opacity:0;transition:opacity .45s ease}
+.zones.on{opacity:1}
+.zone{position:absolute;left:0;right:0;border-radius:6px;background:var(--accent)}
+.ball{
+  position:absolute;left:50%;width:44px;height:44px;margin-left:-22px;margin-top:-22px;
+  border-radius:50%;background:var(--ball);border:2px solid var(--outline);
+  cursor:grab;touch-action:none;
+}
+.ball:active{cursor:grabbing}
+.ball.locked{cursor:default}
+.truth{
+  position:absolute;left:50%;width:64px;height:0;margin-left:-32px;
+  border-top:4px dashed var(--label);opacity:0;transition:opacity .5s ease .2s;
+}
+.truth.on{opacity:1}
+.truth span{position:absolute;left:70px;top:-12px;white-space:nowrap;color:var(--label);font-weight:700;font-size:.8rem;letter-spacing:.08em}
+@media (prefers-reduced-motion:reduce){.zones,.truth{transition:none}}
+
+.clue{
+  font-family:"Baloo 2",inherit;font-weight:700;
+  font-size:clamp(1.15rem,5.4vw,1.5rem);color:var(--ink);
+  padding:10px 12px;border-bottom:3px solid var(--label);display:inline-block;
+}
+
+/* scores */
+.scoreline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.scoreline:last-child{border-bottom:0}
+.pts{font-family:"Baloo 2",inherit;font-weight:700;font-size:1.4rem;color:var(--label)}
+.big-score{font-family:"Baloo 2",inherit;font-size:2.6rem;font-weight:700}
+.winner{background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:14px 16px;text-align:center}
+
+.code-out{
+  width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;
+  padding:12px;border:2px solid var(--line);border-radius:12px;
+  background:var(--field);color:var(--ink);word-break:break-all;min-height:96px;resize:vertical;
+}
+/* The rose panel: pink card, white field, deeper rose edging and button. */
+.panel.rose{background:var(--rose);border-color:var(--rose-line)}
+.panel.rose input[type=text]{border-color:var(--rose-line)}
+.panel.rose input[type=text]:focus-visible{
+  border-color:var(--rose-focus);
+  box-shadow:0 0 0 5px rgba(168,62,62,.22);
+}
+.panel.rose button{background:var(--rose-btn);color:#FFFFFF;border-color:var(--rose-btn-edge)}
+.centre{display:flex;justify-content:center;text-align:center}
+button.threequarter{width:60%;border-radius:999px}
+.hidden{display:none !important}
+#view-home{margin-top:0}
+#view-home > p{margin-top:2px}
+#view-home .panel:first-of-type{margin-top:7vh}
+#view-home .credit{
+  /* Same width and alignment as the intro line under the heading, just
+     smaller and pushed well clear of the boxes. */
+  margin-top:24vh;
+  font-size:.78rem;line-height:1.6;color:var(--muted);
+}
+#view-share, #view-join, #view-results{margin-top:5vh}
+#view-home .panel + .panel{margin-top:34px}
+.board + .panel{margin-top:32px}
+.board{margin-bottom:0}
+.err{color:var(--label);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1 class="display">SPECTRAL</h1>
+    <span class="tagline" id="phaseTag">setup</span>
+  </header>
+
+  <!-- ============ HOME ============ -->
+  <section id="view-home" class="stack">
+    <p class="muted">Name something that matches where the slider button sits. Your partner sees only your label, and guesses where the button was.</p>
+
+    <div class="panel rose stack">
+      <label class="field" for="myName">Your name</label>
+      <div class="row">
+        <input type="text" id="myName" maxlength="14" placeholder="e.g. Sam" autocomplete="off">
+        <button id="startBtn">Play!</button>
+      </div>
+    </div>
+
+    <div class="panel stack">
+      <label class="field" for="pasteCode">Been sent a link?</label>
+      <div class="row">
+        <input type="text" id="pasteCode" placeholder="Paste it here" autocomplete="off" spellcheck="false">
+        <button id="loadBtn">Open</button>
+      </div>
+      <p class="err hidden" id="loadErr">That link didn't read properly — check nothing was cut off.</p>
+    </div>
+
+    <p class="credit">Spectral is an imitation of Spectrum, a game I played online during
+    lockdown at playfromhome.us, which no longer seems to be running. Rebuilt from memory,
+    so the details are probably wrong. Both it and this likely owe a debt to Wavelength by
+    Alex Hague, Justin Vickers and Wolfgang Warsch.</p>
+  </section>
+
+  <!-- ============ JOIN ============ -->
+  <section id="view-join" class="stack hidden">
+    <div class="panel stack">
+      <h2 id="joinTitle"></h2>
+      <p id="joinBody" class="muted"></p>
+      <div>
+        <label class="field" for="joinName">Your name</label>
+        <input type="text" id="joinName" maxlength="14" placeholder="e.g. Alex" autocomplete="off">
+      </div>
+      <button class="wide" id="joinBtn">Start guessing</button>
+    </div>
+  </section>
+
+  <!-- ============ WRITE ============ -->
+  <section id="view-write" class="stack hidden">
+    <p class="muted" id="writeIntro"></p>
+    <div class="board" id="writeBoard">
+      <div class="end-word" id="writeTop"></div>
+      <div class="pole-area">
+        <div class="pole"></div>
+        <div class="ball locked" id="writeBall" style="top:50%"></div>
+      </div>
+      <div class="end-word" id="writeBottom"></div>
+    </div>
+    <div class="panel">
+      <label class="field" for="writeInput">Something that belongs here</label>
+      <input type="text" id="writeInput" maxlength="42" placeholder="A thing, a place, a person…" autocomplete="off">
+    </div>
+    <div class="actions"><button id="writeNext">Lock it in</button></div>
+  </section>
+
+  <!-- ============ GUESS ============ -->
+  <section id="view-guess" class="stack hidden">
+    <p class="muted" id="guessIntro"></p>
+    <div class="board">
+      <div class="end-word" id="guessTop"></div>
+      <div class="pole-area">
+        <div class="pole"></div>
+        <div class="zones" id="guessZones"></div>
+        <div class="truth" id="guessTruth"><span>actual</span></div>
+        <div class="ball" id="guessBall" role="slider" tabindex="0"
+             aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"
+             aria-label="Your guess along the spectrum" style="top:50%"></div>
+      </div>
+      <div class="end-word" id="guessBottom"></div>
+      <div style="margin-top:10px"><span class="clue" id="guessClue"></span></div>
+    </div>
+    <div class="panel stack">
+      <p id="guessResult" class="hidden"></p>
+      <p class="muted">Drag the slider button, tap the bar, or use the arrow keys.</p>
+    </div>
+    <div class="actions"><button id="guessLock">Lock in my guess</button></div>
+  </section>
+
+  <!-- ============ SHARE ============ -->
+  <section id="view-share" class="stack hidden">
+    <div class="panel stack">
+      <h2 id="shareTitle"></h2>
+      <p id="shareBody"></p>
+      <textarea class="code-out" id="shareCode" readonly rows="3" aria-label="Link to send"></textarea>
+    </div>
+    <div class="centre" style="margin-top:34px"><button class="threequarter" id="copyLink">Copy the link</button></div>
+    <p class="muted centre" id="copyNote" aria-live="polite"></p>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="view-results" class="stack hidden">
+    <div class="panel stack" id="resultsBox"></div>
+    <div id="resultsShare"></div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------
+   1. CONTENT
+   Each pair is [top of the pole, bottom of the pole].
+   Position is a percentage from the top: 0 = touching the top word.
+   --------------------------------------------------------------- */
+const PAIRS = [
+  ["DUSTY","SQUEAKY CLEAN"],["UNDERRATED","OVERRATED"],["CHEAP","EXPENSIVE"],
+  ["TEMPORARY","PERMANENT"],["QUIET","DEAFENING"],["ROUND","POINTY"],
+  ["GUILTY PLEASURE","OPENLY LOVED"],["FORBIDDEN","ENCOURAGED"],["FREEZING","BOILING"],
+  ["USELESS","ESSENTIAL"],["UGLY","BEAUTIFUL"],["BORING","THRILLING"],
+  ["FRAGILE","INDESTRUCTIBLE"],["CASUAL","FORMAL"],["RURAL","URBAN"],
+  ["CHEESY","EFFORTLESSLY COOL"],["SIMPLE","FIENDISHLY COMPLICATED"],["EVERYWHERE","VANISHINGLY RARE"],
+  ["SOGGY","BONE DRY"],["SOFT","ROCK HARD"],["FAKE","THE REAL THING"],
+  ["CHILDISH","GROWN-UP"],["GLACIAL","BLISTERINGLY FAST"],["PEACEFUL","CHAOTIC"],
+  ["CURSED","BLESSED"],["SMELLS AWFUL","SMELLS WONDERFUL"],["UNCOMFORTABLE","BLISSFUL"],
+  ["ANCIENT","FUTURISTIC"],["INNOCENT","SINISTER"],["FEEBLE","POWERFUL"],
+  ["BEIGE","VIVID"],["FORGETTABLE","UNFORGETTABLE"],["SMALL TALK","DEEP CONVERSATION"],
+  ["NOBODY KNOWS IT","EVERYBODY KNOWS IT"],["TERRIBLE FOR YOU","GLOWINGLY HEALTHY"],
+  ["DEFINITELY ILLEGAL","ENTIRELY LEGAL"],["DEADLY SERIOUS","UTTERLY SILLY"],
+  ["FEATHER LIGHT","IMMENSELY HEAVY"],["NATURAL","SYNTHETIC"],["DO IT ALONE","NEEDS A CROWD"],
+  ["FITS IN A POCKET","NEEDS A VAN"],["STICKY","SLIPPERY"],["WHOLESOME","UNHINGED"],
+  ["DRAINING","EFFORTLESS"],["BASIC","VERY FANCY"],["TELL YOUR MUM","NEVER TELL YOUR MUM"],
+  ["SMOOTH","ROUGH"],["UNDERGROUND","MAINSTREAM"],["A BAD GIFT","A PERFECT GIFT"],
+  ["CRINGE","ICONIC"],["A SNACK","A PROPER MEAL"],["RECKLESS","SENSIBLE"],
+  ["BLAND","EYE-WATERINGLY SPICY"],["NOSTALGIC","BRAND NEW"],["WOBBLY","ROCK STEADY"],
+  ["OVERTHOUGHT","THROWN TOGETHER"],["A CHORE","A TREAT"],["TINY","ENORMOUS"]
+];
+
+/* Scoring. d is the distance in percentage points between guess and target.
+   You score for your own guesses. Nothing else. Totals compared at the end. */
+const BANDS = [[4,1000],[10,800],[18,600],[28,400],[40,200]];
+function scoreFor(d){ for(const [max,pts] of BANDS){ if(d<=max) return pts; } return 0; }
+const MAX_PER_ROUND = 1000;
+const ROUNDS = 3;
+
+/* ---------------------------------------------------------------
+   2. ENCODING - the whole game travels in the URL fragment.
+   Anything after # is never sent to the server, so a static host
+   never sees it. Base64url keeps it safe to paste anywhere.
+   --------------------------------------------------------------- */
+function encodeGame(obj){
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin=""; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function decodeGame(str){
+  let s = str.trim().replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/");
+  while(s.length % 4) s += "=";          // put the padding back before atob
+  const bin = atob(s);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+/* ---------------------------------------------------------------
+   3. STATE
+   game = the shared object that gets passed back and forth.
+   S    = this device's working state. Nothing is stored on disk.
+   --------------------------------------------------------------- */
+let game = null;
+let S = { me:0, idx:0, guesses:[], locked:false, pos:50 };
+
+const $ = id => document.getElementById(id);
+const VIEWS = ["home","join","write","guess","share","results"];
+function show(name){
+  VIEWS.forEach(v => $("view-"+v).classList.toggle("hidden", v!==name));
+  window.scrollTo(0,0);
+}
+function setTag(t){ $("phaseTag").textContent = t; }
+
+function shuffledPairIndexes(exclude){
+  const pool = PAIRS.map((_,i)=>i).filter(i => !exclude.includes(i));
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  return pool;
+}
+/* Keep targets off the very ends - a ball pinned to a word is no fun to clue. */
+function randomTarget(){ return Math.round(7 + Math.random()*86); }
+
+function dealEntries(count, exclude){
+  const pool = shuffledPairIndexes(exclude);
+  return Array.from({length:count}, (_,k) => ({ s:pool[k], t:randomTarget(), l:"" }));
+}
+
+/* ---------------------------------------------------------------
+   4. HOME
+   --------------------------------------------------------------- */
+$("startBtn").addEventListener("click", () => {
+  const name = ($("myName").value || "Player 1").trim().slice(0,14);
+  game = { v:1, r:ROUNDS, p:[{ n:name, e:dealEntries(ROUNDS, []), g:null }] };
+  S.me = 0; S.idx = 0;
+  startWriting();
+});
+
+$("myName").addEventListener("keydown", e => { if(e.key==="Enter") $("startBtn").click(); });
+
+$("loadBtn").addEventListener("click", () => {
+  const raw = $("pasteCode").value.trim().replace(/^.*#g=/,"");
+  try { openGame(decodeGame(raw)); $("loadErr").classList.add("hidden"); }
+  catch(err){ $("loadErr").classList.remove("hidden"); }
+});
+$("pasteCode").addEventListener("keydown", e => { if(e.key==="Enter") $("loadBtn").click(); });
+
+/* ---------------------------------------------------------------
+   5. WRITING PHASE
+   --------------------------------------------------------------- */
+function startWriting(){
+  S.idx = 0;
+  paintWrite();
+  show("write");
+}
+function paintWrite(){
+  const mine = game.p[S.me].e;
+  const entry = mine[S.idx];
+  const pair = PAIRS[entry.s];
+  $("writeTop").textContent = pair[0];
+  $("writeBottom").textContent = pair[1];
+  $("writeBall").style.top = entry.t + "%";
+  $("writeInput").value = "";
+  $("writeIntro").textContent = "The slider button is fixed where it is. Name something that sits exactly there.";
+  setTag(`${S.idx+1}/${mine.length}`);
+  $("writeInput").focus();
+}
+function submitWrite(){
+  const val = $("writeInput").value.trim();
+  if(!val) { $("writeInput").focus(); return; }
+  game.p[S.me].e[S.idx].l = val.slice(0,42);
+  S.idx++;
+  if(S.idx < game.p[S.me].e.length){ paintWrite(); }
+  else { afterWriting(); }
+}
+$("writeNext").addEventListener("click", submitWrite);
+$("writeInput").addEventListener("keydown", e => { if(e.key==="Enter") submitWrite(); });
+
+/* ---------------------------------------------------------------
+   6. THE SLIDER
+   Pointer, touch and keyboard all drive one setPos() function.
+   --------------------------------------------------------------- */
+const ball = $("guessBall");
+const area = ball.parentElement;
+
+function setPos(pct){
+  S.pos = Math.max(0, Math.min(100, pct));
+  ball.style.top = S.pos + "%";
+  ball.setAttribute("aria-valuenow", Math.round(S.pos));
+}
+function posFromEvent(clientY){
+  const r = area.getBoundingClientRect();
+  setPos(((clientY - r.top) / r.height) * 100);
+}
+function dragStart(e){
+  if(S.locked) return;
+  e.preventDefault();
+  posFromEvent(e.clientY);
+  const move = ev => posFromEvent(ev.clientY);
+  const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+}
+ball.addEventListener("pointerdown", dragStart);
+area.addEventListener("pointerdown", dragStart);
+ball.addEventListener("keydown", e => {
+  if(S.locked) return;
+  const step = e.shiftKey ? 1 : 3;
+  const map = { ArrowUp:-step, ArrowDown:step, ArrowLeft:-step, ArrowRight:step, PageUp:-12, PageDown:12, Home:-100, End:100 };
+  if(!(e.key in map)) return;
+  e.preventDefault();
+  setPos(S.pos + map[e.key]);
+});
+
+/* ---------------------------------------------------------------
+   7. GUESSING PHASE
+   --------------------------------------------------------------- */
+function otherIndex(){ return S.me === 0 ? 1 : 0; }
+
+function startGuessing(){
+  S.idx = 0; S.guesses = [];
+  paintGuess();
+  show("guess");
+}
+function paintGuess(){
+  const theirs = game.p[otherIndex()].e;
+  const entry = theirs[S.idx];
+  const pair = PAIRS[entry.s];
+  S.locked = false;
+  ball.classList.remove("locked");
+  $("guessZones").classList.remove("on");
+  $("guessTruth").classList.remove("on");
+  $("guessResult").classList.add("hidden");
+  $("guessLock").textContent = "Lock in my guess";
+  $("guessLock").disabled = false;
+  $("guessTop").textContent = pair[0];
+  $("guessBottom").textContent = pair[1];
+  $("guessClue").textContent = entry.l;
+  $("guessIntro").textContent = `${game.p[otherIndex()].n} put this somewhere on the pole. Where?`;
+  setTag(`${S.idx+1}/${theirs.length}`);
+  setPos(50);
+  ball.focus();
+}
+function drawZones(target){
+  const z = $("guessZones");
+  z.innerHTML = "";
+  /* Widest band first so the tighter ones sit on top and read darker. */
+  [...BANDS].reverse().forEach(([max,pts]) => {
+    const d = document.createElement("div");
+    d.className = "zone";
+    const top = Math.max(0, target - max), bottom = Math.min(100, target + max);
+    d.style.top = top + "%";
+    d.style.height = (bottom - top) + "%";
+    d.style.opacity = (0.12 + pts*0.11).toFixed(2);
+    z.appendChild(d);
+  });
+  z.classList.add("on");
+}
+function lockGuess(){
+  const theirs = game.p[otherIndex()].e;
+  const entry = theirs[S.idx];
+
+  if(!S.locked){
+    S.locked = true;
+    ball.classList.add("locked");
+    const guess = Math.round(S.pos);
+    S.guesses.push(guess);
+    const d = Math.abs(guess - entry.t);
+    const pts = scoreFor(d);
+    drawZones(entry.t);
+    const truth = $("guessTruth");
+    truth.style.top = entry.t + "%";
+    truth.classList.add("on");
+    const msg = pts === 1000 ? "Bullseye." : pts === 0 ? "Nowhere near." : "";
+    $("guessResult").innerHTML = `<span class="pts">${pts}</span> &nbsp;<span class="muted">${d} away. ${msg}</span>`;
+    $("guessResult").classList.remove("hidden");
+    $("guessLock").textContent = S.idx + 1 < theirs.length ? "Next spectrum" : "Done guessing";
+    return;
+  }
+
+  S.idx++;
+  if(S.idx < theirs.length){ paintGuess(); }
+  else { afterGuessing(); }
+}
+$("guessLock").addEventListener("click", lockGuess);
+
+/* ---------------------------------------------------------------
+   8. FLOW - who does what, and when
+   Player 0 writes -> link A
+   Player 1 guesses, then writes -> link B
+   Player 0 guesses -> link C (results only)
+   --------------------------------------------------------------- */
+function afterWriting(){
+  if(S.me === 0 && !game.p[1]){
+    // Link A: the opening handover.
+    handOver({
+      title:`Send it over, ${game.p[0].n}!`,
+      body:`Your ${game.r} spectrums are locked in. Send them via the link to someone who can then write their own and send a link back to play.`
+    });
+  } else {
+    // Player 1 has now written theirs: send back for player 0 to guess.
+    game.p[1].g = S.guesses;
+    handOver({
+      title:`Send it back, ${game.p[1].n}!`,
+      body:`You scored ${sum(S.guesses.map((g,i)=>scoreFor(Math.abs(g-game.p[0].e[i].t))))} of ${game.r*MAX_PER_ROUND}. Send the link back so ${game.p[0].n} can guess yours, and whoever's higher wins.`
+    });
+  }
+}
+function afterGuessing(){
+  if(S.me === 1){
+    // Guessed first, now write your own set.
+    const used = game.p[0].e.map(e => e.s);
+    game.p[1].e = dealEntries(game.r, used);
+    S.idx = 0;
+    paintWrite();
+    show("write");
+  } else {
+    game.p[0].g = S.guesses;
+    renderResults(true);
+  }
+}
+function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+
+function handOver({title, body}){
+  const code = encodeGame(game);
+  S.outCode = code;
+  /* Prefer a real link. Inside a sandboxed preview the page has no proper
+     http(s) address, so fall back to the code, which pastes on the home screen. */
+  const url = linkFor(code);
+  S.outText = /^https?:/.test(url) ? url : code;
+  $("shareTitle").textContent = title;
+  $("shareBody").textContent = body;
+  $("shareCode").value = S.outText;
+  $("copyNote").textContent = "";
+  setTag("");
+  show("share");
+}
+function linkFor(code){ return location.href.split("#")[0] + "#g=" + code; }
+
+async function copy(text, note){
+  try { await navigator.clipboard.writeText(text); $("copyNote").textContent = note; }
+  catch(err){ $("copyNote").textContent = "Copying was blocked — select the box above and copy it by hand."; }
+}
+$("copyLink").addEventListener("click", () => copy(S.outText, "Copied. Paste it into your chat."));
+
+/* ---------------------------------------------------------------
+   9. OPENING AN INCOMING GAME
+   --------------------------------------------------------------- */
+function openGame(g){
+  game = g;
+  if(!game.p[1]){
+    // Link A. Ask who this is, then guess player 0's set.
+    S.me = 1;
+    $("joinTitle").textContent = `${game.p[0].n} has sent you a game`;
+    $("joinBody").textContent = `${game.r} spectrums to guess, then ${game.r} of your own to write and send back. Highest total wins.`;
+    $("joinName").value = "";
+    setTag("");
+    show("join");
+    $("joinName").focus();
+  } else if(!game.p[0].g){
+    // Link B. Player 0 is back: show how their clues landed, then guess.
+    S.me = 0;
+    renderMidpoint();
+  } else {
+    // Link C. Everything is in.
+    S.me = 0;
+    renderResults(false);
+  }
+}
+
+function joinAsSecond(){
+  const name = ($("joinName").value || "Player 2").trim().slice(0,14) || "Player 2";
+  game.p[1] = { n:name, e:null, g:null };
+  startGuessing();
+}
+$("joinBtn").addEventListener("click", joinAsSecond);
+$("joinName").addEventListener("keydown", e => { if(e.key==="Enter") joinAsSecond(); });
+
+function renderMidpoint(){
+  const theirScores = game.p[1].g.map((g,i) => scoreFor(Math.abs(g - game.p[0].e[i].t)));
+  const rows = game.p[0].e.map((e,i) => `
+    <div class="scoreline">
+      <div><strong>${escapeHtml(e.l)}</strong><br><span class="muted">${PAIRS[e.s][0]} → ${PAIRS[e.s][1]} · ${Math.abs(game.p[1].g[i]-e.t)} away</span></div>
+      <span class="pts">${theirScores[i]}</span>
+    </div>`).join("");
+  $("resultsBox").innerHTML = `
+    <h2>How ${escapeHtml(game.p[1].n)} did on yours</h2>
+    <p class="muted">These points are theirs. Yours are still to play for.</p>
+    ${rows}
+    <p><span class="big-score">${sum(theirScores)}</span> <span class="muted">to ${escapeHtml(game.p[1].n)}, of ${game.r*MAX_PER_ROUND}</span></p>`;
+  $("resultsShare").innerHTML = `<button class="wide" id="toGuess">Now guess ${escapeHtml(game.p[1].n)}'s spectrums</button>`;
+  $("toGuess").addEventListener("click", startGuessing);
+  setTag("");
+  show("results");
+}
+
+/* Each player scores for their own guesses, and only those. */
+function totals(){
+  const g0 = game.p[0].g.map((g,i) => scoreFor(Math.abs(g - game.p[1].e[i].t)));
+  const g1 = game.p[1].g.map((g,i) => scoreFor(Math.abs(g - game.p[0].e[i].t)));
+  return { g0, g1, p0:sum(g0), p1:sum(g1) };
+}
+
+function renderResults(canSendBack){
+  const t = totals();
+  const maxEach = game.r * MAX_PER_ROUND;
+  const banner = t.p0 === t.p1
+    ? `<div class="winner"><span class="big-score">${t.p0}</span> each<br>A draw.</div>`
+    : `<div class="winner"><span class="big-score">${Math.max(t.p0,t.p1)}</span><br>${escapeHtml(t.p0 > t.p1 ? game.p[0].n : game.p[1].n)} wins</div>`;
+
+  const table = `
+    <div class="scoreline"><span><strong>${escapeHtml(game.p[0].n)}</strong></span><span class="pts">${t.p0}</span></div>
+    <div class="scoreline"><span><strong>${escapeHtml(game.p[1].n)}</strong></span><span class="pts">${t.p1}</span></div>
+    <p class="muted">Out of ${maxEach} each.</p>`;
+
+  /* Player pi wrote these; the other player guessed them. */
+  const roundList = [0,1].map(pi => {
+    const guesser = pi === 0 ? 1 : 0;
+    const rows = game.p[pi].e.map((e,i) => {
+      const d = Math.abs(game.p[guesser].g[i] - e.t);
+      return `<div class="scoreline">
+          <div><strong>${escapeHtml(e.l)}</strong><br><span class="muted">${PAIRS[e.s][0]} → ${PAIRS[e.s][1]} · ${d} away</span></div>
+          <span class="pts">${scoreFor(d)}</span></div>`;
+    }).join("");
+    return `<h2 style="margin-top:18px">${escapeHtml(game.p[guesser].n)} guessing ${escapeHtml(game.p[pi].n)}'s</h2>${rows}`;
+  }).join("");
+
+  $("resultsBox").innerHTML = banner + table + roundList;
+  $("resultsShare").innerHTML = canSendBack
+    ? `<div class="panel stack" style="margin-top:16px"><p>You both know your own scores already — just tell ${escapeHtml(game.p[1].n)} yours, or send this if you'd rather they saw the table.</p>
+         <button class="ghost wide" id="sendFinal">Copy the results link</button>
+         <p class="muted" id="finalNote" aria-live="polite"></p></div>`
+    : `<div class="panel stack" style="margin-top:16px"><button class="ghost wide" id="againBtn">Start another game</button></div>`;
+  if(canSendBack){
+    $("sendFinal").addEventListener("click", async () => {
+      const code = encodeGame(game);
+      try { await navigator.clipboard.writeText(linkFor(code)); $("finalNote").textContent = "Copied. Paste it into your chat."; }
+      catch(err){ $("finalNote").textContent = "Copying was blocked — use the code box on the previous screen instead."; }
+    });
+  } else {
+    $("againBtn").addEventListener("click", () => {
+      try { location.hash = ""; location.reload(); }
+      catch(err){ game = null; S = { me:0, idx:0, guesses:[], locked:false, pos:50 }; setTag(""); show("home"); }
+    });
+  }
+  setTag("");
+  show("results");
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ---------------------------------------------------------------
+   10. BOOT
+   --------------------------------------------------------------- */
+(function boot(){
+  const m = location.hash.match(/#g=(.+)$/);
+  if(m){
+    try { openGame(decodeGame(m[1])); return; }
+    catch(err){ /* fall through to home */ }
+  }
+  setTag("");
+  show("home");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  // No "main" key on purpose. With no Worker script, requests are served
+  // straight from the asset store - no cold start, no CPU billing.
+  "name": "spectral-prototype",
+  "compatibility_date": "2026-08-15",
+  "assets": {
+    "directory": "./public"
+  }
+}

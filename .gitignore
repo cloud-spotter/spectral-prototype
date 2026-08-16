@@ -1,0 +1,12 @@
+# Cloudflare / wrangler
+.wrangler/
+.dev.vars
+
+# Node, if you ever add tooling
+node_modules/
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
